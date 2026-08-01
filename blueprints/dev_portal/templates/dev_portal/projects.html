@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Dev Portal · Projects{% endblock %}
+{% block portal_name %}Dev Portal{% endblock %}
+{% block poll_interval %}10000{% endblock %}
+
+{% block sidebar_links %}
+  <a href="{{ url_for('dev_portal.dashboard') }}" class="block rounded-lg px-3 py-2 text-slate-400 hover:bg-white/5 hover:text-white transition-colors">Overview</a>
+  <a href="{{ url_for('dev_portal.tasks') }}" class="block rounded-lg px-3 py-2 text-slate-400 hover:bg-white/5 hover:text-white transition-colors">Task Board</a>
+  <a href="{{ url_for('dev_portal.projects') }}" class="block rounded-lg bg-indigo-500/15 px-3 py-2 font-medium text-white ring-1 ring-inset ring-indigo-400/30">Projects</a>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-6 text-2xl font-semibold text-slate-900">Software Projects</h1>
+<div class="mb-4 rounded-lg bg-indigo-50 px-4 py-2 text-xs text-indigo-700">
+  Connect a project to its GitHub repo to get real pushes flowing into QC's queue.
+</div>
+
+<div class="overflow-hidden rounded-xl bg-white shadow-sm">
+  <table class="w-full text-left text-sm">
+    <thead class="bg-slate-50 text-slate-500">
+      <tr>
+        <th class="px-5 py-3">Project</th>
+        <th class="px-5 py-3">Developer</th>
+        <th class="px-5 py-3">QC</th>
+        <th class="px-5 py-3">Status</th>
+        <th class="px-5 py-3">Latest Deployment</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for p in projects %}
+      <tr class="cursor-pointer hover:bg-slate-50" onclick="window.location='{{ url_for('dev_portal.project_detail', project_id=p.id) }}'">
+        <td class="px-5 py-3 font-medium text-slate-900">{{ p.name }}</td>
+        <td class="px-5 py-3">{{ p.developer_name or "Unassigned" }}</td>
+        <td class="px-5 py-3">{{ p.qc_name or "Unassigned" }}</td>
+        <td class="px-5 py-3">
+          <span class="rounded-full bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700 capitalize">{{ p.status.replace('_', ' ') }}</span>
+        </td>
+        <td class="px-5 py-3 text-slate-500 capitalize">{{ (p.latest_deployment_status or "none").replace('_', ' ') }}</td>
+      </tr>
+      {% else %}
+      <tr><td class="px-5 py-3 text-slate-400" colspan="5">No projects assigned to you yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
