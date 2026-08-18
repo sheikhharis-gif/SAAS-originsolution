@@ -1,8 +1,9 @@
 import csv
 import io
 
-from flask import Blueprint, abort, g, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, g, jsonify, redirect, render_template, request, url_for
 
+from blueprints.sales import lead_engine
 from core.auth import guard_role
 from core.db import execute, query
 from crm.helpers import (
@@ -305,3 +306,70 @@ def update_task_status(task_id):
         abort(400)
     execute("UPDATE tasks SET status = %s WHERE id = %s", (status, task_id))
     return redirect(url_for("sales.tasks"))
+
+
+# ============================================================
+# LEAD GENERATION (multi-source business lead scraper)
+# ============================================================
+@bp.route("/lead-generation")
+def lead_generation():
+    return render_template("sales/lead_generation.html")
+
+
+@bp.route("/lead-generation/api/search", methods=["POST"])
+def lead_generation_search():
+    status, body = lead_engine.execute_search(
+        city=request.args.get("city", ""),
+        country=request.args.get("country", ""),
+        keywords=request.args.get("keywords", ""),
+        num_leads=request.args.get("num_leads", 50, type=int) or 50,
+        use_places=request.args.get("use_places", "false"),
+        api_key=request.args.get("api_key", ""),
+    )
+    return jsonify(body), status
+
+
+@bp.route("/lead-generation/api/leads")
+def lead_generation_leads():
+    return jsonify({"leads": lead_engine.all_leads, "total": len(lead_engine.all_leads)})
+
+
+@bp.route("/lead-generation/api/stats")
+def lead_generation_stats():
+    return jsonify(lead_engine.get_stats())
+
+
+@bp.route("/lead-generation/api/history")
+def lead_generation_history():
+    return jsonify({"history": lead_engine.search_history})
+
+
+@bp.route("/lead-generation/api/logs")
+def lead_generation_logs():
+    return jsonify({"logs": lead_engine.search_logs})
+
+
+@bp.route("/lead-generation/api/export")
+def lead_generation_export_csv():
+    content = lead_engine.export_csv_content()
+    if content is None:
+        return Response("No leads to export.", status=400)
+    timestamp = lead_engine.datetime.now().strftime("%Y%m%d_%H%M%S")
+    return Response(
+        content,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=leads_export_{timestamp}.csv"},
+    )
+
+
+@bp.route("/lead-generation/api/export/excel")
+def lead_generation_export_excel():
+    content = lead_engine.export_excel_content()
+    if content is None:
+        return Response("No leads to export", status=400)
+    timestamp = lead_engine.datetime.now().strftime("%Y%m%d_%H%M%S")
+    return Response(
+        content,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=leads_export_{timestamp}.xlsx"},
+    )

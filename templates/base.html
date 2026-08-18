@@ -23,6 +23,7 @@
     #top-nav::-webkit-scrollbar { height: 4px; }
     #top-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); }
   </style>
+  {% block extra_head %}{% endblock %}
 </head>
 <body class="h-full" data-poll-interval="{% block poll_interval %}{% endblock %}">
   <div class="flex h-full min-h-screen flex-col">
